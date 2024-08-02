@@ -1,0 +1,76 @@
+# -*- coding: utf-8 -*-
+"""
+Created on Sun Mar 17 13:35:53 2024
+
+@author: ct347
+"""
+
+import numpy as np
+from sklearn.cluster import DBSCAN
+from haversine import haversine
+
+def read_data_from_file(file_path):
+    with open(file_path, 'r') as file:
+        data = file.read()
+    return data
+
+def parse_data(data):
+    blocks = data.strip().split('\n\n')
+    paths = []
+    for block in blocks:
+        lines = block.strip().split('\n')
+        if len(lines) < 2:
+            continue
+        try:
+            start_parts = lines[0].split(';')[:2]
+            end_parts = lines[-1].split(';')[:2]
+            start_coords = tuple(map(float, start_parts))
+            end_coords = tuple(map(float, end_parts))
+            paths.append({'coords': (start_coords, end_coords), 'block': block})
+        except ValueError:
+            continue
+    return paths
+
+def cluster_paths(paths, eps_km=0.15):
+    n = len(paths)
+    distance_matrix = np.zeros((n, n))
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            start_distance = haversine(paths[i]['coords'][0], paths[j]['coords'][0])
+            end_distance = haversine(paths[i]['coords'][1], paths[j]['coords'][1])
+            composite_distance = max(start_distance, end_distance)
+            distance_matrix[i, j] = distance_matrix[j, i] = composite_distance
+
+    db = DBSCAN(eps=eps_km, min_samples=1, metric='precomputed').fit(distance_matrix)
+    labels = db.labels_
+
+    clusters = {}
+    for i in range(n):
+        label = labels[i]
+        if label in clusters:
+            clusters[label].append(paths[i])
+        else:
+            clusters[label] = [paths[i]]
+
+    return clusters
+
+def main(file_path):
+    data = read_data_from_file(file_path)
+    paths = parse_data(data)
+    clusters = cluster_paths(paths, eps_km=0.2)
+
+    max_cluster_size = max(len(cluster) for cluster in clusters.values())
+    max_cluster = max(clusters.items(), key=lambda x: len(x[1]))
+
+    # 输出到文件
+    with open('max_cluster_details.txt', 'w', encoding='utf-8') as f:
+        f.write(f'最大聚类包含路径数量: {max_cluster_size}\n\n')
+        for path in max_cluster[1]:
+            f.write(f'{path["block"]}\n\n')
+    print(f'最大聚类包含路径数量: {max_cluster_size}')
+    print('最大聚类中的路径节点:')
+    print(f"最大聚类的详细信息已保存到文件：max_cluster_details.txt")
+
+file_path = 'output_file no passenger data.txt'
+main(file_path)

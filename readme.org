@@ -1,0 +1,12 @@
+# =============================================================================
+# File      : readme.org -- Readme file for ecmm project
+# Author    : Juergen Hackl <hackl@princeton.edu>
+# Time-stamp: <Sat 2024-01-27 13:39 juergen>
+# Copyright (c) 2023 Juergen Hackl <hackl@princeton.edu>
+# =============================================================================
+#+TITLE: Endpoint-conditioned Markov models
+#+AUTHOR: Juergen Hackl
+
+* Project Summary
+
+Using endpoint-conditioned Markov models allows the representation of origin-destination paths as higher-order networks.
